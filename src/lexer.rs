@@ -52,7 +52,41 @@ fn ends_token(cur: char, next: char) -> bool {
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
     NoType = 0,
+
+    // 100, 5, 34298, -43
     NumericIntLiteral = 1,
+
+    // 100.10, 0.0124, 45.453
+    // NOT: .3, 54
+    NumericDecLiteral = 2,
+
+    LeftBrace,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+    LeftParen,
+    RightParen,
+
+    Dot,
+    Comma,
+
+    Assignment,
+    Semicolon,
+    Colon,
+    Tag,
+    Reference,
+    Question,
+    At,
+    Percent,
+    Bang,
+    BackSlash,
+
+    Space,
+    Tab,
+    Newline,
+
+    SingleQuote,
+    DoubleQuote,
 }
 
 pub trait TokenTrait {
@@ -72,7 +106,7 @@ fn is_part_int_numeric(part: &str) -> bool {
     let first_char = chars
         .nth(0)
         .expect("Part should have more than zero characters");
-    if !is_non_zero_number(first_char) {
+    if !(is_non_zero_number(first_char) || first_char == '-') {
         return false;
     }
 
@@ -94,14 +128,56 @@ impl TokenTrait for Token {
     }
 
     fn tokenize(tokens: String) -> Self {
-        let mut token = Token::default();
         let token_str = tokens.as_str();
+        let mut token = Token::default();
+
+        if tokens.len() == 1 {
+            let token_type = match token_str {
+                "{" => TokenType::LeftBrace,
+                "}" => TokenType::RightBrace,
+                "[" => TokenType::LeftBracket,
+                "]" => TokenType::RightBracket,
+                "(" => TokenType::LeftParen,
+                ")" => TokenType::RightParen,
+
+                "." => TokenType::Dot,
+                "," => TokenType::Comma,
+
+                "=" => TokenType::Assignment,
+                ";" => TokenType::Semicolon,
+                ":" => TokenType::Colon,
+                "#" => TokenType::Tag,
+                "&" => TokenType::Reference,
+                "?" => TokenType::Question,
+                "@" => TokenType::At,
+                "%" => TokenType::Percent,
+                "!" => TokenType::Bang,
+                "\\" => TokenType::BackSlash,
+
+                " " => TokenType::Space,
+                "\t" => TokenType::Tab,
+                "\n" => TokenType::Newline,
+
+                "\'" => TokenType::SingleQuote,
+                "\"" => TokenType::DoubleQuote,
+
+                _ => TokenType::NoType,
+            };
+
+            if token_type != TokenType::NoType {
+                token.token_type = token_type;
+                token.value = tokens;
+                return token;
+            }
+        }
 
         if is_part_int_numeric(token_str) {
             token.token_type = TokenType::NumericIntLiteral;
             token.value = tokens;
+            return token;
         }
 
+        token.value = tokens;
         return token;
     }
 
@@ -113,6 +189,7 @@ impl TokenTrait for Token {
 
 pub struct Lexer {
     line_index: usize,
+    column_index: usize,
     lines: Vec<String>,
 }
 
@@ -125,6 +202,7 @@ impl Lex for Lexer {
     fn new() -> Self {
         Lexer {
             line_index: 0,
+            column_index: 0,
             lines: vec![],
         }
     }
@@ -137,9 +215,14 @@ impl Lex for Lexer {
         // anyway so there isn't much of a real disadvantage do doing this
         self.lines[self.line_index].push(' ');
 
-        for (cur, next) in self.lines[self.line_index].chars().into_iter().tuples() {
-            if !ends_token(cur, next) {
-                buffer.push(cur);
+        let current_line = &self.lines[self.line_index][self.column_index..];
+
+        for (cur, next) in current_line.chars().into_iter().tuple_windows() {
+            self.column_index += 1;
+            buffer.push(cur);
+            if ends_token(cur, next) {
+                self.column_index += 1;
+                break;
             }
         }
 
@@ -174,6 +257,18 @@ mod tests {
             TokenType::NumericIntLiteral
         );
         assert_ne!(Token::tokenize("1 ".to_string()).value, "1".to_string());
+    }
+
+    #[test]
+    fn lexer_test() {
+        let mut lex: Lexer = Lexer::new();
+
+        lex.lines = vec!["a int 5 =".to_string()];
+
+        assert_eq!(lex.next().value, "a");
+        assert_eq!(lex.next().value, "int");
+        assert_eq!(lex.next().value, "5");
+        assert_eq!(lex.next().value, "=");
     }
 
     #[test]
