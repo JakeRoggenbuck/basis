@@ -1,15 +1,5 @@
 use itertools::Itertools;
 
-fn is_type(maybe_type: String) -> bool {
-    match maybe_type.as_str() {
-        // Number types:
-        "number" | "int" | "ratio" | "real" | "dec" | "complex" | "imaginary" | "size"
-        // Other types
-        | "literal" | "type" | "option" | "string" => true,
-        _ => false,
-    }
-}
-
 fn is_char_symbol(ch: char) -> bool {
     match ch {
         '[' | ']' | '{' | '}' | '(' | ')' | '.' | ',' | ':' | ';' | '=' | '\'' | '\"' | '\\'
@@ -70,6 +60,14 @@ pub enum TokenType {
     Dot,
     Comma,
 
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+
+    Greater,
+    Less,
+
     Assignment,
     Semicolon,
     Colon,
@@ -87,6 +85,37 @@ pub enum TokenType {
 
     SingleQuote,
     DoubleQuote,
+
+    TypeNumberKeyword,
+    // "int"
+    TypeIntKeyword,
+    TypeRatioKeyword,
+    TypeRealKeyword,
+    TypeDecKeyword,
+    TypeComplexKeyword,
+    TypeImaginaryKeyword,
+    TypeSizeKeyword,
+
+    // Variable name like "a"
+    Identifier,
+}
+
+fn is_type(maybe_type: &str) -> TokenType {
+    match maybe_type {
+        // Number types:
+        "number" => TokenType::TypeNumberKeyword,
+        "int" => TokenType::TypeIntKeyword,
+        "ratio" => TokenType::TypeRatioKeyword,
+        "real" => TokenType::TypeRealKeyword,
+        "dec" => TokenType::TypeDecKeyword,
+        "complex" => TokenType::TypeComplexKeyword,
+        "imaginary" => TokenType::TypeImaginaryKeyword,
+        "size" => TokenType::TypeSizeKeyword,
+
+        // Other types
+        // "literal" | "type" | "option" | "string" => true,
+        _ => TokenType::NoType,
+    }
 }
 
 pub trait TokenTrait {
@@ -119,6 +148,18 @@ fn is_part_int_numeric(part: &str) -> bool {
     return true;
 }
 
+fn is_part_alpha(part: &str) -> bool {
+    let chars = part.chars();
+
+    for c in chars {
+        if !c.is_alphabetic() {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 impl TokenTrait for Token {
     fn default() -> Self {
         return Token {
@@ -142,6 +183,14 @@ impl TokenTrait for Token {
 
                 "." => TokenType::Dot,
                 "," => TokenType::Comma,
+
+                "+" => TokenType::Addition,
+                "-" => TokenType::Subtraction,
+                "*" => TokenType::Multiplication,
+                "/" => TokenType::Division,
+
+                ">" => TokenType::Greater,
+                "<" => TokenType::Less,
 
                 "=" => TokenType::Assignment,
                 ";" => TokenType::Semicolon,
@@ -177,6 +226,21 @@ impl TokenTrait for Token {
             return token;
         }
 
+        // Check for type keywords like "int" and "dec"
+        let tok = is_type(token_str);
+        if tok != TokenType::NoType {
+            token.token_type = tok;
+            token.value = tokens;
+            return token;
+        }
+
+        // Check for identifiers that are not keywords
+        if is_part_alpha(token_str) {
+            token.token_type = TokenType::Identifier;
+            token.value = tokens;
+            return token;
+        }
+
         token.value = tokens;
         return token;
     }
@@ -196,6 +260,7 @@ pub struct Lexer {
 pub trait Lex {
     fn new() -> Self;
     fn next(&mut self) -> Token;
+    fn reset_line(&mut self);
 }
 
 impl Lex for Lexer {
@@ -217,16 +282,28 @@ impl Lex for Lexer {
 
         let current_line = &self.lines[self.line_index][self.column_index..];
 
+        // Iterate through using windows of size 2
+        // abcd -> (a, b), (b, c), (c, d)
         for (cur, next) in current_line.chars().into_iter().tuple_windows() {
+            // Skip whitespace at the start of a new section on un-lexed line
+            if is_char_whitespace(cur) {
+                self.column_index += 1;
+                continue;
+            }
+
             self.column_index += 1;
             buffer.push(cur);
+            // dbg!(cur, next, buffer.clone());
             if ends_token(cur, next) {
-                self.column_index += 1;
                 break;
             }
         }
 
         return Token::from_chars(buffer);
+    }
+
+    fn reset_line(&mut self) {
+        self.column_index = 0;
     }
 }
 
@@ -269,11 +346,156 @@ mod tests {
         assert_eq!(lex.next().value, "int");
         assert_eq!(lex.next().value, "5");
         assert_eq!(lex.next().value, "=");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::TypeIntKeyword);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::Assignment);
+
+        lex.reset_line();
+
+        lex.lines = vec!["1 1 +".to_string()];
+
+        assert_eq!(lex.next().value, "1");
+        assert_eq!(lex.next().value, "1");
+        assert_eq!(lex.next().value, "+");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::Addition);
+
+        lex.reset_line();
+
+        lex.lines = vec!["2 5 / .".to_string()];
+
+        assert_eq!(lex.next().value, "2");
+        assert_eq!(lex.next().value, "5");
+        assert_eq!(lex.next().value, "/");
+        assert_eq!(lex.next().value, ".");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::Division);
+        assert_eq!(lex.next().token_type, TokenType::Dot);
+
+        lex.reset_line();
+
+        lex.lines = vec!["b ratio 3 4 / =".to_string()];
+
+        assert_eq!(lex.next().value, "b");
+        assert_eq!(lex.next().value, "ratio");
+        assert_eq!(lex.next().value, "3");
+        assert_eq!(lex.next().value, "4");
+        assert_eq!(lex.next().value, "/");
+        assert_eq!(lex.next().value, "=");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::TypeRatioKeyword);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::Division);
+        assert_eq!(lex.next().token_type, TokenType::Assignment);
+
+        lex.reset_line();
+
+        lex.lines = vec!["e".to_string()];
+
+        assert_eq!(lex.next().value, "e");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+
+        lex.reset_line();
+
+        lex.lines = vec!["f (x <number>) x <1> +".to_string()];
+
+        assert_eq!(lex.next().value, "f");
+        assert_eq!(lex.next().value, "(");
+        assert_eq!(lex.next().value, "x");
+        assert_eq!(lex.next().value, "<");
+        assert_eq!(lex.next().value, "number");
+        assert_eq!(lex.next().value, ">");
+        assert_eq!(lex.next().value, ")");
+        assert_eq!(lex.next().value, "x");
+        assert_eq!(lex.next().value, "<");
+        assert_eq!(lex.next().value, "1");
+        assert_eq!(lex.next().value, ">");
+        assert_eq!(lex.next().value, "+");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::LeftParen);
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::Less);
+        assert_eq!(lex.next().token_type, TokenType::TypeNumberKeyword);
+        assert_eq!(lex.next().token_type, TokenType::Greater);
+        assert_eq!(lex.next().token_type, TokenType::RightParen);
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::Less);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::Greater);
+        assert_eq!(lex.next().token_type, TokenType::Addition);
+
+        lex.reset_line();
+
+        lex.lines = vec!["[1 2 3]".to_string()];
+
+        assert_eq!(lex.next().value, "[");
+        assert_eq!(lex.next().value, "1");
+        assert_eq!(lex.next().value, "2");
+        assert_eq!(lex.next().value, "3");
+        assert_eq!(lex.next().value, "]");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::LeftBracket);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::NumericIntLiteral);
+        assert_eq!(lex.next().token_type, TokenType::RightBracket);
+
+        lex.reset_line();
+
+        lex.lines = vec!["mean (c container[ratio]) =:".to_string()];
+
+        assert_eq!(lex.next().value, "mean");
+        assert_eq!(lex.next().value, "(");
+        assert_eq!(lex.next().value, "c");
+        assert_eq!(lex.next().value, "container");
+        assert_eq!(lex.next().value, "[");
+        assert_eq!(lex.next().value, "ratio");
+        assert_eq!(lex.next().value, "]");
+        assert_eq!(lex.next().value, ")");
+        assert_eq!(lex.next().value, "=");
+        assert_eq!(lex.next().value, ":");
+
+        lex.reset_line();
+
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::LeftParen);
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::Identifier);
+        assert_eq!(lex.next().token_type, TokenType::LeftBracket);
+        assert_eq!(lex.next().token_type, TokenType::TypeRatioKeyword);
+        assert_eq!(lex.next().token_type, TokenType::RightBracket);
+        assert_eq!(lex.next().token_type, TokenType::RightParen);
+        assert_eq!(lex.next().token_type, TokenType::Assignment);
+        assert_eq!(lex.next().token_type, TokenType::Colon);
     }
 
     #[test]
     fn is_type_test() {
-        assert!(is_type("dec".to_string()));
+        assert_eq!(is_type("dec"), TokenType::TypeDecKeyword);
     }
 
     #[test]
