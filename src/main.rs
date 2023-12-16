@@ -1,3 +1,7 @@
+use crate::lexer::{Lex, Lexer};
+
+pub mod lexer;
+
 fn main() {
-    println!("Hello, world!");
+    let mut lex: Lexer = Lexer::new();
 }
