@@ -6,8 +6,15 @@ version = 3
 name = "basis"
 version = "0.1.0"
 dependencies = [
+ "efcl",
  "itertools",
 ]
+
+[[package]]
+name = "efcl"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cc5719498b622a4332139a599458627779053ff0220e59f6aaab0618e00a18e"
 
 [[package]]
 name = "either"

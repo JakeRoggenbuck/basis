@@ -26,6 +26,16 @@ fn is_char_whitespace(ch: char) -> bool {
     }
 }
 
+fn is_part_whitespace(string: &str) -> bool {
+    for s in string.chars() {
+        if !is_char_whitespace(s) {
+            return false;
+        }
+    }
+
+    true
+}
+
 fn ends_token(cur: char, next: char) -> bool {
     if is_char_whitespace(next) {
         return true;
@@ -98,6 +108,8 @@ pub enum TokenType {
 
     // Variable name like "a"
     Identifier,
+
+    EndToken,
 }
 
 fn is_type(maybe_type: &str) -> TokenType {
@@ -124,6 +136,7 @@ pub trait TokenTrait {
     fn from_chars(chars: Vec<char>) -> Self;
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
@@ -258,17 +271,17 @@ pub struct Lexer {
 }
 
 pub trait Lex {
-    fn new() -> Self;
+    fn new(lines: Vec<String>) -> Self;
     fn next(&mut self) -> Token;
     fn reset_line(&mut self);
 }
 
 impl Lex for Lexer {
-    fn new() -> Self {
+    fn new(lines: Vec<String>) -> Self {
         Lexer {
             line_index: 0,
             column_index: 0,
-            lines: vec![],
+            lines,
         }
     }
 
@@ -281,6 +294,12 @@ impl Lex for Lexer {
         self.lines[self.line_index].push(' ');
 
         let current_line = &self.lines[self.line_index][self.column_index..];
+
+        if is_part_whitespace(current_line) {
+            let mut token = Token::default();
+            token.token_type = TokenType::EndToken;
+            return token;
+        }
 
         // Iterate through using windows of size 2
         // abcd -> (a, b), (b, c), (c, d)
@@ -338,7 +357,7 @@ mod tests {
 
     #[test]
     fn lexer_test() {
-        let mut lex: Lexer = Lexer::new();
+        let mut lex: Lexer = Lexer::new(vec![]);
 
         lex.lines = vec!["a int 5 =".to_string()];
 
