@@ -3,6 +3,7 @@ use efcl::{bold, color, Color};
 use std::io::{stdin, stdout, Write};
 
 pub mod lexer;
+pub mod parser;
 
 fn interactive() {
     loop {

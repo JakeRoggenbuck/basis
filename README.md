@@ -179,8 +179,8 @@ a = <value provided by input>
 Comments are done like the following with a space before and after any text inside the `comment` as an homage to [Cruz Lang](https://github.com/JakeRoggenbuck/cruz-lang) and later [Planck Lang](https://github.com/plancklang/) and [Z-Flat](https://github.com/adamhutchings/zflat) along with many more.
 
 ```
-> ~ hello world ~
-comment: ~ hello world ~
+> ~~ hello world ~~
+comment: ~~ hello world ~~
 ```
 Comments are the `comment` `type` and can be converted into the `string` `type`
 
