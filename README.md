@@ -1,6 +1,10 @@
 # Basis (math language)
 A math console language with a bunch of useful functions and constants
 
+## Interpreter Progress
+
+![image](https://github.com/JakeRoggenbuck/basis/assets/35516367/3599b6c6-31d0-42f9-9c5f-a9293093f091)
+
 ## Syntax
 
 Note: The `>` at the start of the line is the prompt. This prompt will evaluate the line and then display the value of the `console` attribute.
