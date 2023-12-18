@@ -27,16 +27,16 @@ ratio: 2 / 3
 
 Basis allows you to convert fractions to decimal with the decimal `.` function which operates on one rational to the left.
 ```
-> 2 5 / .
+> (2 5 /) .
 dec: 0.4
 ```
 
 The precision of rations can be specified, they default to 32 bit max, but can be set with the tilde function. The shorthand `prec` will show the precision of the ratio in the console.
 ```
-> 1 3 / ~
+> (1 3 /) ~
 ratio (prec 1): 1 / 3
 
-> 1 3 / ~ .
+> (1 3 /) ~ .
 dec: 0.3
 ```
 
@@ -56,7 +56,7 @@ There are many types along with the `number` type which cannot be instantiated b
 > a int 5 =
 a = int: 5
 
-> b ratio 3 4 / =
+> b ratio (3 4 /) =
 b = ratio: 3 / 4
 ```
 
@@ -69,7 +69,7 @@ Every number type, has a method to turn each number type into any other number t
 Literal can wrap the `number` `type` and other types. It essentially is like a normal variable, but instead of being included in the expression execution, it stays a literal.
 
 ```
-> mynum literal 3 4 / =
+> mynum literal (3 4 /) =
 literal: mynum
 
 > mynum unwrap
@@ -211,10 +211,10 @@ The `function` syntax may seem weird at first, but when given the closure syntax
 The following is a new closure (scope) that is evaluated as an expression
 
 ```
-> : 1 1 +
+> : (1 1 +)
 closure: 1 1 +
 
-> : 1 1 + unwrap
+> : (1 1 +) unwrap
 int: 2
 ```
 
@@ -245,12 +245,12 @@ function: f (<number>) -> <number>
 All attributes are actually functions (lazily loaded when specified to be so)
 
 ```
-> 3 4 / . ~ create a ratio of 3 / 4 and then call the . function to cast it into a decimal type ~
+> (3 4 /) . ~ create a ratio of 3 / 4 and then call the . function to cast it into a decimal type ~
 dec: 0.75
 ```
 
 ```
-> a 3 4 / =
+> a (3 4 /) =
 a = ratio: 3 / 4
 
 > a . ~ cast a into a decimal type, also stores the decimal representation of a into a ~

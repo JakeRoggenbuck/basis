@@ -49,7 +49,7 @@ fn ends_token(cur: char, next: char) -> bool {
     return false;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     NoType = 0,
 
@@ -136,7 +136,7 @@ pub trait TokenTrait {
     fn from_chars(chars: Vec<char>) -> Self;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
@@ -268,11 +268,21 @@ pub struct Lexer {
     line_index: usize,
     column_index: usize,
     lines: Vec<String>,
+    prev_token: Token,
 }
 
 pub trait Lex {
     fn new(lines: Vec<String>) -> Self;
     fn next(&mut self) -> Token;
+
+    /// TODO: Get this to move back one token and return it
+    fn prev(&mut self) -> Token;
+
+    /// TODO: Get this to show the next token without moving the column_index
+    fn peak(&mut self) -> Token;
+    /// TODO: Get this to show the previous token without moving the column_index
+    fn lookback(&mut self) -> Token;
+
     fn reset_line(&mut self);
 }
 
@@ -282,7 +292,12 @@ impl Lex for Lexer {
             line_index: 0,
             column_index: 0,
             lines,
+            prev_token: Token::default(),
         }
+    }
+
+    fn prev(&mut self) -> Token {
+        return self.prev_token.clone();
     }
 
     fn next(&mut self) -> Token {
@@ -312,17 +327,27 @@ impl Lex for Lexer {
 
             self.column_index += 1;
             buffer.push(cur);
-            // dbg!(cur, next, buffer.clone());
             if ends_token(cur, next) {
                 break;
             }
         }
 
-        return Token::from_chars(buffer);
+        let new_token = Token::from_chars(buffer);
+        return new_token;
     }
 
     fn reset_line(&mut self) {
         self.column_index = 0;
+    }
+
+    /// TODO: Get this to show the next token without moving the column_index
+    fn peak(&mut self) -> Token {
+        Token::default()
+    }
+
+    /// TODO: Get this to show the previous token without moving the column_index
+    fn lookback(&mut self) -> Token {
+        Token::default()
     }
 }
 
