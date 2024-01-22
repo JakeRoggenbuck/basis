@@ -3,6 +3,8 @@ A math console language with a bunch of useful functions and constants
 
 ## Interpreter Progress
 
+The lexer has been completed. Next up is the parser and code gen.
+
 ![image](https://github.com/JakeRoggenbuck/basis/assets/35516367/3599b6c6-31d0-42f9-9c5f-a9293093f091)
 
 ## Syntax
