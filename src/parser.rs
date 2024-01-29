@@ -1,31 +1,31 @@
 use crate::lexer::{Lex, Lexer, Token, TokenType};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InnerTokenExpression {
     token: Token,
 }
 
 /// Expression Expression Operation
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InnerExpExpOp {
     expression_1: Box<Expression>,
     expression_2: Box<Expression>,
     operation: Box<Operation>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     TokenExpression(InnerTokenExpression),
     ExpExpOp(InnerExpExpOp),
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct InnerTokenOperation {
     token: Token,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operation {
     TokenOperation(InnerTokenOperation),
 }
@@ -58,6 +58,33 @@ fn run_operation(
                                     },
                                 })
                             }
+
+                            TokenType::Subtraction => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_int - b_int),
+                                    },
+                                })
+                            }
+
+                            TokenType::Multiplication => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_int * b_int),
+                                    },
+                                })
+                            }
+
+                            TokenType::Division => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_int / b_int),
+                                    },
+                                })
+                            }
                             _ => Expression::None,
                         },
                     }
@@ -81,6 +108,34 @@ fn run_operation(
                                     },
                                 })
                             }
+
+                            TokenType::Subtraction => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_float - b_float),
+                                    },
+                                })
+                            }
+
+                            TokenType::Multiplication => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_float * b_float),
+                                    },
+                                })
+                            }
+
+                            TokenType::Division => {
+                                return Expression::TokenExpression(InnerTokenExpression {
+                                    token: Token {
+                                        token_type: TokenType::NumericIntLiteral,
+                                        value: format!("{}", a_float / b_float),
+                                    },
+                                })
+                            }
+
                             _ => Expression::None,
                         },
                     }
@@ -168,6 +223,46 @@ mod tests {
             Expression::TokenExpression(d) => {
                 assert_eq!(d.token.token_type, TokenType::NumericIntLiteral);
                 assert_eq!(d.token.value, String::from("3"));
+            }
+
+            _ => assert!(false),
+        }
+
+        let c = Expression::ExpExpOp({
+            InnerExpExpOp {
+                expression_1: Box::new(Expression::TokenExpression(InnerTokenExpression {
+                    token: Token {
+                        value: "8".to_string(),
+                        token_type: TokenType::NumericIntLiteral,
+                    },
+                })),
+
+                expression_2: Box::new(Expression::TokenExpression(InnerTokenExpression {
+                    token: Token {
+                        value: "10".to_string(),
+                        token_type: TokenType::NumericIntLiteral,
+                    },
+                })),
+
+                operation: Box::new(Operation::TokenOperation(InnerTokenOperation {
+                    token: Token {
+                        value: "*".to_string(),
+                        token_type: TokenType::Multiplication,
+                    },
+                })),
+            }
+        });
+
+        // c is basically "8 10 *" as an expression
+
+        let output = parse(c);
+
+        // output is "80"
+
+        match output {
+            Expression::TokenExpression(e) => {
+                assert_eq!(e.token.token_type, TokenType::NumericIntLiteral);
+                assert_eq!(e.token.value, String::from("80"));
             }
 
             _ => assert!(false),

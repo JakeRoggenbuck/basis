@@ -136,7 +136,7 @@ pub trait TokenTrait {
     fn from_chars(chars: Vec<char>) -> Self;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 // TODO: Change value: String to value: TokenValue and make TokenValue an enum with many types
 // supported like int, float, string, etc.
 pub struct Token {
