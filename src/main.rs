@@ -1,4 +1,5 @@
-use crate::lexer::{Lex, Lexer, TokenType};
+use crate::lexer::{Lex, Lexer, Token, TokenType};
+use crate::parser::{parse, tokens_to_expr, Expression};
 use efcl::{bold, color, Color};
 use std::io::{stdin, stdout, Write};
 
@@ -16,6 +17,8 @@ fn interactive() {
 
         let mut lex: Lexer = Lexer::new(vec![input]);
 
+        let mut tokens = Vec::<Token>::new();
+
         loop {
             let a = lex.next();
 
@@ -24,6 +27,17 @@ fn interactive() {
             }
 
             println!("{:?}", a);
+            tokens.push(a);
+        }
+
+        let expr = tokens_to_expr(tokens);
+        let out = parse(expr);
+
+        match out {
+            Expression::None => {}
+            _ => {
+                println!("-> {:?}", out);
+            }
         }
     }
 }

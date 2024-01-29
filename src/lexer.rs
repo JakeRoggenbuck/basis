@@ -137,6 +137,8 @@ pub trait TokenTrait {
 }
 
 #[derive(Debug, Clone)]
+// TODO: Change value: String to value: TokenValue and make TokenValue an enum with many types
+// supported like int, float, string, etc.
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
